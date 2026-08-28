@@ -1,0 +1,89 @@
+{
+  "$schema": "https://locaryn.dev/schema/morph.json/v0.1",
+  "apiVersion": "0.1",
+  "name": "morph-omniroute",
+  "version": "1.0.0",
+  "description": "Passerelle OmniRoute : une seule adresse pour des centaines de modèles — Claude, GPT, Gemini, Llama — avec vos propres clés, vos quotas et votre routage. La passerelle tourne sur votre machine ; Locaryn ne fait que lui parler.",
+  "author": "Locaryn Team",
+  "license": "Apache-2.0",
+  "homepage": "https://github.com/pitbaden/omniroute",
+  "repository": "https://github.com/Locaryn/morph-omniroute",
+  "keywords": [
+    "cloud-provider",
+    "omniroute",
+    "gateway",
+    "openai-compatible",
+    "routing",
+    "fallback",
+    "quota"
+  ],
+  "permissions": {
+    "network": {
+      "reason": "Parler à la passerelle OmniRoute sur la boucle locale : liste des modèles et conversations.",
+      "requireApproval": false
+    },
+    "shell": {
+      "reason": "Démarrer la passerelle OmniRoute quand elle ne répond pas, avec la commande déclarée ici et aucune autre.",
+      "scope": "always"
+    }
+  },
+  "capabilities": [
+    "cloud-provider"
+  ],
+  "cloud_provider": {
+    "id": "omniroute",
+    "label": "OmniRoute",
+    "api_url": "http://localhost:20128",
+    "models_url": "http://localhost:20128/v1/models",
+    "keys_url": "http://localhost:20128",
+    "docs_url": "https://github.com/pitbaden/omniroute#readme",
+    "key_hint": "Clé émise par OmniRoute (page « Endpoints » du tableau de bord)",
+    "refresh_hours": 1,
+    "local": {
+      "start": [
+        "omniroute"
+      ],
+      "health_url": "http://localhost:20128/v1/models",
+      "dashboard_url": "http://localhost:20128",
+      "install_hint": "npm install -g omniroute — ou, en conteneur : docker run -d --name omniroute -p 20128:20128 -v omniroute-data:/app/data diegosouzapw/omniroute:latest"
+    }
+  },
+  "ui_contributions": {
+    "slots": [
+      {
+        "id": "omniroute-folder",
+        "slot": "models.folder",
+        "order": 10,
+        "type": "custom-element",
+        "label": "OmniRoute",
+        "icon": "cloud",
+        "entry": "dist/ui.js",
+        "tag": "locaryn-omniroute-panel",
+        "value": "omniroute",
+        "hint": "Le tableau de bord d'OmniRoute, ses modèles, et le choix de celui qui répond"
+      }
+    ],
+    "settings_sections": [
+      {
+        "id": "omniroute",
+        "label": "OmniRoute",
+        "description": "Les clés des fournisseurs (Anthropic, OpenAI, Google…) se configurent dans le tableau de bord d'OmniRoute, pas ici : c'est lui qui les détient et qui route.",
+        "fields": [
+          {
+            "id": "only_tools",
+            "type": "boolean",
+            "label": "Ne montrer que les modèles qui savent appeler des outils",
+            "hint": "Sans appel d'outils, l'agent ne peut ni lire ni modifier de fichiers."
+          },
+          {
+            "id": "autostart",
+            "type": "boolean",
+            "label": "Démarrer la passerelle à l'ouverture du dossier",
+            "default": "true",
+            "hint": "Décoché, Locaryn se contente de dire qu'elle ne répond pas."
+          }
+        ]
+      }
+    ]
+  }
+}
