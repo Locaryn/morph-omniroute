@@ -2,11 +2,11 @@
   "$schema": "https://locaryn.dev/schema/morph.json/v0.1",
   "apiVersion": "0.1",
   "name": "morph-omniroute",
-  "version": "1.0.0-beta.1",
-  "description": "Passerelle OmniRoute : une seule adresse pour des centaines de modèles — Claude, GPT, Gemini, Llama — avec vos propres clés, vos quotas et votre routage. La passerelle tourne sur votre machine ; Locaryn ne fait que lui parler.",
+  "version": "1.0.0-beta.2",
+  "description": "Passerelle OmniRoute : une seule adresse pour des centaines de modèles — Claude, GPT, Gemini, Llama, et des modèles gratuits dès l'installation. Locaryn l'installe, la démarre sur la boucle locale et obtient sa clé : il n'y a rien à copier.",
   "author": "Locaryn Team",
   "license": "Apache-2.0",
-  "homepage": "https://github.com/pitbaden/omniroute",
+  "homepage": "https://omniroute.online",
   "repository": "https://github.com/Locaryn/morph-omniroute",
   "keywords": [
     "cloud-provider",
@@ -23,7 +23,7 @@
       "requireApproval": false
     },
     "shell": {
-      "reason": "Démarrer la passerelle OmniRoute quand elle ne répond pas, avec la commande déclarée ici et aucune autre.",
+      "reason": "Installer OmniRoute dans le dossier de Locaryn, la démarrer, l'arrêter et lui demander sa clé — avec les commandes déclarées ici et aucune autre.",
       "scope": "always"
     }
   },
@@ -33,19 +33,60 @@
   "cloud_provider": {
     "id": "omniroute",
     "label": "OmniRoute",
-    "api_url": "http://localhost:20128",
-    "models_url": "http://localhost:20128/v1/models",
-    "keys_url": "http://localhost:20128",
-    "docs_url": "https://github.com/pitbaden/omniroute#readme",
-    "key_hint": "Clé émise par OmniRoute (page « Endpoints » du tableau de bord)",
+    "api_url": "http://127.0.0.1:20128",
+    "models_url": "http://127.0.0.1:20128/v1/models",
+    "keys_url": "http://127.0.0.1:20128/dashboard",
+    "docs_url": "https://github.com/diegosouzapw/OmniRoute#readme",
+    "key_hint": "Obtenue automatiquement au premier démarrage",
+    "key_required": false,
     "refresh_hours": 1,
     "local": {
       "start": [
-        "omniroute"
+        "omniroute",
+        "serve",
+        "--no-open",
+        "--port",
+        "20128"
       ],
-      "health_url": "http://localhost:20128/v1/models",
-      "dashboard_url": "http://localhost:20128",
-      "install_hint": "npm install -g omniroute — ou, en conteneur : docker run -d --name omniroute -p 20128:20128 -v omniroute-data:/app/data diegosouzapw/omniroute:latest"
+      "stop": [
+        "omniroute",
+        "stop"
+      ],
+      "env": {
+        "OMNIROUTE_SERVER_HOST": "127.0.0.1",
+        "PORT": "20128",
+        "DATA_DIR": "{{data_dir}}",
+        "OMNIROUTE_NO_UPDATE_NOTIFIER": "1"
+      },
+      "secrets": [
+        "JWT_SECRET",
+        "API_KEY_SECRET",
+        "INITIAL_PASSWORD"
+      ],
+      "dashboard_password": "INITIAL_PASSWORD",
+      "provision_key": {
+        "command": [
+          "omniroute",
+          "api",
+          "api-keys",
+          "post-api-keys",
+          "--body",
+          "{\"name\":\"Locaryn\"}",
+          "--output",
+          "json"
+        ],
+        "field": "key"
+      },
+      "start_timeout_seconds": 180,
+      "health_url": "http://127.0.0.1:20128/v1/models",
+      "dashboard_url": "http://127.0.0.1:20128/dashboard",
+      "install_hint": "Locaryn installe OmniRoute lui-même. Il faut Node.js 22 (22.22.2 ou plus) ou 24 : nodejs.org.",
+      "install": {
+        "kind": "npm",
+        "package": "omniroute",
+        "version": "3.8.50",
+        "probe_bin": "omniroute"
+      }
     }
   },
   "ui_contributions": {
@@ -60,7 +101,7 @@
         "entry": "dist/ui.js",
         "tag": "locaryn-omniroute-panel",
         "value": "omniroute",
-        "hint": "Le tableau de bord d'OmniRoute, ses modèles, et le choix de celui qui répond"
+        "hint": "Les modèles qu'OmniRoute route, et le choix de celui qui répond"
       }
     ],
     "settings_sections": [
@@ -74,13 +115,6 @@
             "type": "boolean",
             "label": "Ne montrer que les modèles qui savent appeler des outils",
             "hint": "Sans appel d'outils, l'agent ne peut ni lire ni modifier de fichiers."
-          },
-          {
-            "id": "autostart",
-            "type": "boolean",
-            "label": "Démarrer la passerelle à l'ouverture du dossier",
-            "default": "true",
-            "hint": "Décoché, Locaryn se contente de dire qu'elle ne répond pas."
           }
         ]
       }
@@ -90,20 +124,12 @@
   "stability": "untested",
   "versions": [
     {
-      "version": "1.0.0-beta.1",
+      "version": "1.0.0-beta.2",
       "is_beta": true,
-      "summary": "Version Bêta (1.0.0-beta.1) — pre-release non testée par des utilisateurs",
-      "tag": "v1.0.0-beta.1",
-      "released_at": "2026-08-29",
-      "install_source": "Locaryn/morph-omniroute#v1.0.0-beta.1"
-    },
-    {
-      "version": "0.9.0",
-      "is_beta": false,
-      "summary": "Version stable de référence v0.9.0",
-      "tag": "v0.9.0",
-      "released_at": "2026-08-27",
-      "install_source": "Locaryn/morph-omniroute#v0.9.0"
+      "summary": "Installe OmniRoute dans le dossier de Locaryn, l'écoute sur la boucle locale, génère ses secrets et obtient sa clé automatiquement.",
+      "tag": "v1.0.0-beta.2",
+      "released_at": "2026-09-13",
+      "install_source": "Locaryn/morph-omniroute@v1.0.0-beta.2"
     }
   ]
 }
