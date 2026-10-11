@@ -65,6 +65,40 @@ Un modèle OmniRoute fonctionne aussi quand la conversation est confiée à un
 noyau apporté par un autre morph (Hermes Agent). L'identifiant du modèle est
 transmis tel quel au noyau, qui le route à son tour.
 
+## Il faut connecter au moins un fournisseur
+
+Sans compte connecté, le modèle « auto » d'OmniRoute n'a vers qui router : les
+routes gratuites sans clé (OpenCode, Felo…) refusent désormais les clients
+tiers et la conversation répond 502. Dans le tableau de bord, **Providers →
+Add Provider**, ajoutez au moins un fournisseur gratuit sans carte bancaire :
+Google AI Studio (Gemini), Groq, OpenRouter (modèles `:free`), Mistral
+(offre Experiment), NVIDIA NIM, GitHub Models, Cloudflare Workers AI,
+Hugging Face.
+
+## Notes techniques (ce que le manifeste règle)
+
+Tout ce qui suit est déclaré dans `morph.json` ; l'application n'en sait rien
+d'autre que ce que le manifeste lui dit.
+
+- **Écoute** : par défaut OmniRoute ouvre toutes les interfaces sans clé ; le
+  manifeste impose `OMNIROUTE_SERVER_HOST=127.0.0.1`.
+- **Secrets** : le paquet npm embarque un `.env` au même `JWT_SECRET` pour
+  toutes les installations et le mot de passe `CHANGEME`. Le manifeste déclare
+  `JWT_SECRET`, `API_KEY_SECRET` et `INITIAL_PASSWORD` comme secrets : Locaryn
+  en génère des valeurs propres à l'installation, qui priment sur ce fichier
+  (`JWT_SECRET` doit faire au moins 32 caractères).
+- **Clé** : `omniroute api api-keys post-api-keys` crée une clé sans mot de
+  passe, authentifiée par un jeton dérivé de la machine. Sans clé,
+  `/v1/models` répond 401. La passerelle répond avant que cette API soit
+  prête : Locaryn retente.
+- **Premier démarrage** : 159 migrations, plus d'une minute —
+  `start_timeout_seconds: 180`.
+- **Tableau de bord** : `X-Frame-Options: DENY`, il s'ouvre dans le navigateur.
+- **Vérifier le manifeste** : depuis un clone de Locaryn, ce dossier dans
+  `plugins/`, `cargo test -p locaryn-extensions les_manifestes_des_morphs_presents_se_lisent` ;
+  puis contre la vraie passerelle :
+  `LOCARYN_PASSERELLE_MORPH=plugins/morph-omniroute cargo test -p locaryn-cloud-providers --test passerelle_reelle -- --ignored --nocapture`.
+
 ## Licence
 
 Apache-2.0. OmniRoute est un projet indépendant, sous sa propre licence : ce
