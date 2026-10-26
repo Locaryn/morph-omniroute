@@ -107,13 +107,34 @@ morph l'installe depuis npm, il ne le redistribue pas.
 ## Les modèles « utilisables »
 
 OmniRoute publie dans `/v1/models` les modèles de tous les fournisseurs qu'il
-sait router, connectés ou non. Le dossier s'ouvre donc sur **Utilisables** :
-le catalogue vivant de chaque connexion active (`/api/providers/{id}/models`),
-lu par `bin/disponibles.mjs`. La liste de gestion `/api/models` ne convient
-pas : elle marque « available » des modèles que le compte ne sert pas.
+sait router, connectés ou non, et ce qu'une connexion publie n'est pas ce que
+le compte peut appeler : sur une clé NVIDIA gratuite, 85 modèles publiés,
+une dizaine qui répondent, une soixantaine en 404 « not found for account ».
 
-Pour proposer plus de modèles d'un fournisseur, importez-les dans le tableau
-de bord d'OmniRoute (Providers → le fournisseur → modèles).
+La seule source juste est l'essai. Pour chaque connexion gratuite,
+`bin/sonder.mjs` envoie une requête d'un jeton à chaque modèle, au rythme que
+le fournisseur tolère (NVIDIA : 40 par minute), et garde le résultat dans
+`<passerelle>/locaryn/sondes.json`. `bin/disponibles.mjs` ne propose que ce qui
+a répondu ; un modèle pas encore essayé reste proposé le temps de l'essai.
+
+| Résultat | Réessayé après |
+|---|---|
+| a répondu | 6 h |
+| 404 / 400 (retiré, fermé au compte) | 7 jours |
+| aucune réponse en 60 s, 5xx | 1 h |
+| 429 (limite de débit) | 10 min |
+
+Ne sont essayés que les modèles qui ne coûtent rien : les fournisseurs
+entièrement gratuits (NVIDIA) et les connexions qu'OmniRoute limite déjà aux
+modèles gratuits. Une connexion payante garde sa liste telle quelle. Les
+modèles spécialisés (plongements, classement, sécurité, lecture de documents)
+ne sont ni essayés ni proposés au chat.
+
+Pour NVIDIA, OmniRoute règle la connexion sur « modèles gratuits seulement »
+d'après sa propre liste, qui n'en compte que trois — dont un que le compte
+refuse. Tout le catalogue de NVIDIA étant gratuit avec une clé de
+développeur, le morph lève ce réglage et synchronise la liste complète, une
+fois par jour, avec une clé de gestion temporaire retirée aussitôt.
 
 ## Réglé pour les sous-agents
 
@@ -122,5 +143,5 @@ temps) met les requêtes en file, et OmniRoute répond 504 au-delà de
 15 secondes d'attente. `bin/regler.mjs`, lancé après chaque démarrage, porte
 cette attente à deux minutes, sauf si vous l'avez réglée plus longue.
 
-Les deux scripts parlent à l'API de gestion avec le jeton local de la CLI
+Les scripts parlent à l'API de gestion avec le jeton local de la CLI
 d'OmniRoute (`bin/jeton.mjs`) : boucle locale seulement, aucun mot de passe.

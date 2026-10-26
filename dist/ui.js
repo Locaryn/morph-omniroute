@@ -348,7 +348,7 @@
           ),
         );
         if (m.supports_tools) faits.appendChild(el("span", null, "outils"));
-        if (m.available === false) faits.appendChild(el("span", null, "fournisseur non connecté"));
+        if (m.available === false) faits.appendChild(el("span", null, "refusé par ce compte"));
         if ((m.modality || "").indexOf("image") !== -1) faits.appendChild(el("span", null, "vision"));
         gauche.appendChild(faits);
         carte.appendChild(gauche);

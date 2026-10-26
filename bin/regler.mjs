@@ -8,15 +8,17 @@
 // file s'écouler. Un réglage déjà plus long, choisi par la personne, est
 // gardé.
 //
+// Ensuite, les essais des modèles partent en arrière-plan (catalogue.mjs) :
+// quand la liste s'ouvre, ce que le compte sert vraiment est déjà connu.
+//
 // Usage : node regler.mjs <dossier de la passerelle>
 
+import { essaisEnArrierePlan } from "./catalogue.mjs";
 import { gestion } from "./jeton.mjs";
 
 const ATTENTE_MINIMALE_MS = 120_000;
 
-async function principal() {
-  const dossier = process.argv[2];
-  if (!dossier) throw new Error("dossier de la passerelle manquant");
+async function reglerFile(dossier) {
   const actuel = await gestion(dossier, "/api/resilience");
   const attente = actuel?.requestQueue?.maxWaitMs ?? 0;
   if (attente >= ATTENTE_MINIMALE_MS) {
@@ -28,6 +30,16 @@ async function principal() {
     body: JSON.stringify({ requestQueue: { maxWaitMs: ATTENTE_MINIMALE_MS } }),
   });
   console.log(`file d'attente portée de ${attente} à ${ATTENTE_MINIMALE_MS} ms`);
+}
+
+async function principal() {
+  const dossier = process.argv[2];
+  if (!dossier) throw new Error("dossier de la passerelle manquant");
+  try {
+    await reglerFile(dossier);
+  } finally {
+    essaisEnArrierePlan(dossier);
+  }
 }
 
 principal().catch((e) => {

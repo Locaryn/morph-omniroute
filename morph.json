@@ -2,7 +2,7 @@
   "$schema": "https://locaryn.dev/schema/morph.json/v0.1",
   "apiVersion": "0.1",
   "name": "morph-omniroute",
-  "version": "1.0.0-beta.6",
+  "version": "1.0.0-beta.7",
   "description": "Passerelle OmniRoute : une seule adresse pour des centaines de modèles — Claude, GPT, Gemini, Llama, et des modèles gratuits dès l'installation. Locaryn l'installe, la démarre sur la boucle locale et obtient sa clé : il n'y a rien à copier.",
   "author": "Locaryn Team",
   "license": "Apache-2.0",
@@ -140,6 +140,14 @@
   "beta": true,
   "stability": "untested",
   "versions": [
+    {
+      "version": "1.0.0-beta.7",
+      "is_beta": true,
+      "summary": "« Utilisables » montre ce que votre compte sert vraiment : chaque modèle d'une connexion gratuite est essayé (une requête d'un jeton, en arrière-plan), et le catalogue complet de NVIDIA est synchronisé au lieu des 3 modèles qu'OmniRoute importait.",
+      "tag": "v1.0.0-beta.7",
+      "released_at": "2026-10-27",
+      "install_source": "Locaryn/morph-omniroute@v1.0.0-beta.7"
+    },
     {
       "version": "1.0.0-beta.6",
       "is_beta": true,
