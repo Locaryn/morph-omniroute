@@ -2,7 +2,7 @@
   "$schema": "https://locaryn.dev/schema/morph.json/v0.1",
   "apiVersion": "0.1",
   "name": "morph-omniroute",
-  "version": "1.0.0-beta.5",
+  "version": "1.0.0-beta.6",
   "description": "Passerelle OmniRoute : une seule adresse pour des centaines de modèles — Claude, GPT, Gemini, Llama, et des modèles gratuits dès l'installation. Locaryn l'installe, la démarre sur la boucle locale et obtient sa clé : il n'y a rien à copier.",
   "author": "Locaryn Team",
   "license": "Apache-2.0",
@@ -79,7 +79,7 @@
         "field": "key"
       },
       "start_timeout_seconds": 180,
-      "health_url": "http://127.0.0.1:20128/v1/models",
+      "health_url": "http://127.0.0.1:20128/api/monitoring/health",
       "dashboard_url": "http://127.0.0.1:20128/dashboard",
       "install_hint": "Locaryn installe OmniRoute lui-même. Il faut Node.js 22 (22.22.2 ou plus) ou 24 : nodejs.org.",
       "install": {
@@ -140,6 +140,14 @@
   "beta": true,
   "stability": "untested",
   "versions": [
+    {
+      "version": "1.0.0-beta.6",
+      "is_beta": true,
+      "summary": "La sonde de démarrage vise l'adresse de santé d'OmniRoute au lieu de sa liste de modèles : Locaryn ne recalcule plus 550 modèles chaque seconde pendant que la passerelle démarre.",
+      "tag": "v1.0.0-beta.6",
+      "released_at": "2026-10-27",
+      "install_source": "Locaryn/morph-omniroute@v1.0.0-beta.6"
+    },
     {
       "version": "1.0.0-beta.5",
       "is_beta": true,
