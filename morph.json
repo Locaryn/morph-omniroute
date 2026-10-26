@@ -2,7 +2,7 @@
   "$schema": "https://locaryn.dev/schema/morph.json/v0.1",
   "apiVersion": "0.1",
   "name": "morph-omniroute",
-  "version": "1.0.0-beta.2",
+  "version": "1.0.0-beta.3",
   "description": "Passerelle OmniRoute : une seule adresse pour des centaines de modèles — Claude, GPT, Gemini, Llama, et des modèles gratuits dès l'installation. Locaryn l'installe, la démarre sur la boucle locale et obtient sa clé : il n'y a rien à copier.",
   "author": "Locaryn Team",
   "license": "Apache-2.0",
@@ -87,6 +87,19 @@
         "package": "omniroute",
         "version": "3.8.50",
         "probe_bin": "omniroute"
+      },
+      "available_models": {
+        "command": [
+          "omniroute",
+          "api",
+          "models",
+          "get-api-models",
+          "--output",
+          "json"
+        ],
+        "list": "models",
+        "id_field": "fullModel",
+        "flag_field": "available"
       }
     }
   },
@@ -124,6 +137,14 @@
   "beta": true,
   "stability": "untested",
   "versions": [
+    {
+      "version": "1.0.0-beta.3",
+      "is_beta": true,
+      "summary": "Seuls les modèles qu'OmniRoute sert vraiment sont montrés d'abord : ceux des fournisseurs non connectés sont repliés et marqués",
+      "tag": "v1.0.0-beta.3",
+      "released_at": "2026-10-26",
+      "install_source": "Locaryn/morph-omniroute@v1.0.0-beta.3"
+    },
     {
       "version": "1.0.0-beta.2",
       "is_beta": true,

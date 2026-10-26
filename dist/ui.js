@@ -54,7 +54,9 @@
       this.models = [];
       this.query = "";
       /** `tous`, `outils`, `vision`, `gratuits`. */
-      this.filter = "tous";
+      // OmniRoute publie aussi les modèles des fournisseurs non connectés,
+      // qui échouent tous : on montre d'abord ceux qu'elle sert vraiment.
+      this.filter = "utilisables";
       this.provider = null;
       this.running = false;
       this.busy = false;
@@ -152,7 +154,8 @@
           var foin = (m.id + " " + m.name + " " + (m.description || "")).toLowerCase();
           if (foin.indexOf(q) === -1) return false;
         }
-        if (filter === "outils") return m.supports_tools === true;
+        if (filter === "utilisables") return m.available !== false;
+        if (filter === "outils") return m.supports_tools === true && m.available !== false;
         if (filter === "vision") return (m.modality || "").indexOf("image") !== -1;
         if (filter === "gratuits") return m.prompt_price_per_m === 0;
         return true;
@@ -240,7 +243,13 @@
       // ── Les modèles routés ─────────────────────────────────────────────
       var barre = el("div", "locaryn-cloud-toolbar");
       var recherche = el("input", "locaryn-input");
-      recherche.placeholder = "Rechercher parmi " + this.models.length + " modèles routés…";
+      var utilisables = this.models.filter(function (m) {
+        return m.available !== false;
+      }).length;
+      recherche.placeholder =
+        utilisables < this.models.length
+          ? "Rechercher parmi " + utilisables + " modèles utilisables (" + this.models.length + " routés)…"
+          : "Rechercher parmi " + this.models.length + " modèles routés…";
       recherche.value = this.query;
       recherche.addEventListener("input", function () {
         self.query = recherche.value;
@@ -259,6 +268,7 @@
 
       var filtres = el("div", "locaryn-cloud-toolbar");
       [
+        ["utilisables", "Utilisables"],
         ["tous", "Tous"],
         ["outils", "Appel d'outils"],
         ["vision", "Vision"],
@@ -338,6 +348,7 @@
           ),
         );
         if (m.supports_tools) faits.appendChild(el("span", null, "outils"));
+        if (m.available === false) faits.appendChild(el("span", null, "fournisseur non connecté"));
         if ((m.modality || "").indexOf("image") !== -1) faits.appendChild(el("span", null, "vision"));
         gauche.appendChild(faits);
         carte.appendChild(gauche);
