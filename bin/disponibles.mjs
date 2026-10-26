@@ -8,47 +8,20 @@
 // `/api/providers/{id}/models`. La CLI d'OmniRoute ne sait pas appeler cette
 // route (paramètre de chemin perdu), d'où ce script.
 //
-// Il s'authentifie comme la CLI locale : un HMAC du machine-id, accepté sur la
-// boucle locale seulement. Aucun mot de passe, aucune clé.
-//
 // Usage : node disponibles.mjs <dossier de la passerelle>
 // Sortie : {"models":[{"id":"nvidia/openai/gpt-oss-20b"}, …]}
 
-import crypto from "node:crypto";
-import { createRequire } from "node:module";
-import path from "node:path";
-
-const SEL_PAR_DEFAUT = "omniroute-cli-auth-v1";
-
-function jetonLocal(dossierPasserelle) {
-  const exiger = createRequire(path.join(dossierPasserelle, "node_modules", "noop.js"));
-  const machine = exiger("node-machine-id");
-  const machineIdSync = machine.machineIdSync || machine.default?.machineIdSync;
-  const brut = machineIdSync(true);
-  const sel = process.env.OMNIROUTE_CLI_SALT || SEL_PAR_DEFAUT;
-  return crypto.createHmac("sha256", brut).update(sel).digest("hex");
-}
-
-async function lire(base, chemin, jeton) {
-  const reponse = await fetch(base + chemin, {
-    headers: { "x-omniroute-cli-token": jeton },
-    signal: AbortSignal.timeout(30_000),
-  });
-  if (!reponse.ok) throw new Error(`${chemin} : HTTP ${reponse.status}`);
-  return reponse.json();
-}
+import { gestion } from "./jeton.mjs";
 
 async function principal() {
   const dossier = process.argv[2];
   if (!dossier) throw new Error("dossier de la passerelle manquant");
-  const base = `http://127.0.0.1:${process.env.PORT || "20128"}`;
-  const jeton = jetonLocal(dossier);
-  const { connections = [] } = await lire(base, "/api/providers", jeton);
+  const { connections = [] } = await gestion(dossier, "/api/providers");
   const actives = connections.filter((c) => c.isActive !== false);
   const listes = await Promise.all(
     actives.map(async (c) => {
       try {
-        const r = await lire(base, `/api/providers/${encodeURIComponent(c.id)}/models`, jeton);
+        const r = await gestion(dossier, `/api/providers/${encodeURIComponent(c.id)}/models`);
         return (r.models || []).map((m) => ({ id: `${c.provider}/${m.id}` }));
       } catch (e) {
         console.error(`connexion ${c.provider} : ${e.message}`);

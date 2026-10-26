@@ -103,3 +103,24 @@ d'autre que ce que le manifeste lui dit.
 
 Apache-2.0. OmniRoute est un projet indépendant, sous sa propre licence : ce
 morph l'installe depuis npm, il ne le redistribue pas.
+
+## Les modèles « utilisables »
+
+OmniRoute publie dans `/v1/models` les modèles de tous les fournisseurs qu'il
+sait router, connectés ou non. Le dossier s'ouvre donc sur **Utilisables** :
+le catalogue vivant de chaque connexion active (`/api/providers/{id}/models`),
+lu par `bin/disponibles.mjs`. La liste de gestion `/api/models` ne convient
+pas : elle marque « available » des modèles que le compte ne sert pas.
+
+Pour proposer plus de modèles d'un fournisseur, importez-les dans le tableau
+de bord d'OmniRoute (Providers → le fournisseur → modèles).
+
+## Réglé pour les sous-agents
+
+Un fournisseur limité en débit (NVIDIA : 40 requêtes par minute, 6 en même
+temps) met les requêtes en file, et OmniRoute répond 504 au-delà de
+15 secondes d'attente. `bin/regler.mjs`, lancé après chaque démarrage, porte
+cette attente à deux minutes, sauf si vous l'avez réglée plus longue.
+
+Les deux scripts parlent à l'API de gestion avec le jeton local de la CLI
+d'OmniRoute (`bin/jeton.mjs`) : boucle locale seulement, aucun mot de passe.
