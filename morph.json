@@ -2,13 +2,13 @@
   "$schema": "https://locaryn.dev/schema/morph.json/v0.1",
   "apiVersion": "0.1",
   "name": "morph-omniroute",
-  "version": "1.0.0-beta.8",
+  "version": "1.0.0-beta.9",
   "description": "Passerelle OmniRoute : une seule adresse pour des centaines de modèles — Claude, GPT, Gemini, Llama, et des modèles gratuits dès l'installation. Locaryn l'installe, la démarre sur la boucle locale et obtient sa clé : il n'y a rien à copier.",
   "author": "Locaryn Team",
   "license": "Apache-2.0",
   "homepage": "https://omniroute.online",
   "repository": "https://github.com/Locaryn/morph-omniroute",
-  "minLocarynVersion": "0.3.77",
+  "minLocarynVersion": "0.4.60",
   "keywords": [
     "cloud-provider",
     "omniroute",
@@ -124,6 +124,36 @@
         "tag": "locaryn-omniroute-panel",
         "value": "omniroute",
         "hint": "Les modèles qu'OmniRoute route, et le choix de celui qui répond"
+      },
+      {
+        "id": "omniroute-quota-pill",
+        "slot": "composer.status",
+        "order": 10,
+        "type": "custom-element",
+        "entry": "dist/quota.js",
+        "tag": "locaryn-omniroute-quota-pill",
+        "value": "omniroute",
+        "hint": "Quota d'utilisation de OmniRoute, à côté de la jauge de mémoire"
+      },
+      {
+        "id": "omniroute-quota-summary",
+        "slot": "models.folder.tile",
+        "order": 10,
+        "type": "custom-element",
+        "entry": "dist/quota.js",
+        "tag": "locaryn-omniroute-quota-summary",
+        "value": "omniroute",
+        "hint": "Ce qu'il reste sur le compte"
+      },
+      {
+        "id": "omniroute-folder-header",
+        "slot": "models.folder.header",
+        "order": 10,
+        "type": "custom-element",
+        "entry": "dist/quota.js",
+        "tag": "locaryn-omniroute-folder-header",
+        "value": "omniroute",
+        "hint": "Quota du compte et tâches de fond autorisées"
       }
     ],
     "settings_sections": [
@@ -145,6 +175,14 @@
   "beta": true,
   "stability": "untested",
   "versions": [
+    {
+      "version": "1.0.0-beta.9",
+      "is_beta": true,
+      "summary": "Le quota est dessiné par le morph : pastille du chat (seulement le fournisseur du modèle actif, NVIDIA compris), tuile et en-tête du dossier, avec les interrupteurs des tâches de fond, coupés par défaut. Exige Locaryn 0.4.60.",
+      "tag": "v1.0.0-beta.9",
+      "released_at": "2026-11-01",
+      "install_source": "Locaryn/morph-omniroute@v1.0.0-beta.9"
+    },
     {
       "version": "1.0.0-beta.8",
       "is_beta": true,
