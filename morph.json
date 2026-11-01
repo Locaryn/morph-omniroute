@@ -88,6 +88,11 @@
         "version": "3.8.50",
         "probe_bin": "omniroute"
       },
+      "usage_command": [
+        "node",
+        "{{morph_dir}}/bin/utilisation.mjs",
+        "{{gateway_dir}}"
+      ],
       "available_models": {
         "command": [
           "node",
