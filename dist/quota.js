@@ -364,7 +364,10 @@
       ])
         .then(function (r) {
           self.reglages = r[0];
-          self.modeles = r[1] || [];
+          // Seuls les modèles qui conversent savent nommer ou trier.
+          self.modeles = (r[1] || []).filter(function (m) {
+            return (m.kind || "chat") === "chat" && m.available !== false;
+          });
           self.rendreTaches();
         })
         .catch(function (e) {

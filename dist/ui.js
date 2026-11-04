@@ -41,6 +41,23 @@
     return p < 1 ? p.toFixed(2) + " $" : p.toFixed(p < 10 ? 2 : 0) + " $";
   }
 
+  /** Le nom lisible d'un genre de modèle spécialisé. */
+  var GENRES = {
+    image: "Image",
+    video: "Vidéo",
+    music: "Musique",
+    "3d": "3D",
+    speech: "Voix",
+    transcription: "Transcription",
+    realtime: "Temps réel",
+    embedding: "Embeddings",
+    rerank: "Reclassement",
+  };
+
+  function genre(m) {
+    return m.kind || "chat";
+  }
+
   function el(tag, className, text) {
     var node = document.createElement(tag);
     if (className) node.className = className;
@@ -53,10 +70,11 @@
       super();
       this.models = [];
       this.query = "";
-      /** `tous`, `outils`, `vision`, `gratuits`. */
-      // OmniRoute publie aussi les modèles des fournisseurs non connectés,
-      // qui échouent tous : on montre d'abord ceux qu'elle sert vraiment.
-      this.filter = "utilisables";
+      /** `chat`, `outils`, `vision`, `gratuits`, ou un genre spécialisé.
+       *  L'hôte ne renvoie que les modèles que le compte sert, et un genre
+       *  spécialisé (image, voix…) seulement si une extension installée sait
+       *  s'en servir (Locaryn/Locaryn#122). */
+      this.filter = "chat";
       this.provider = null;
       this.running = false;
       this.busy = false;
@@ -154,8 +172,11 @@
           var foin = (m.id + " " + m.name + " " + (m.description || "")).toLowerCase();
           if (foin.indexOf(q) === -1) return false;
         }
-        if (filter === "utilisables") return m.available !== false;
-        if (filter === "outils") return m.supports_tools === true && m.available !== false;
+        if (m.available === false) return false;
+        var g = genre(m);
+        if (GENRES[filter]) return g === filter;
+        if (g !== "chat") return false;
+        if (filter === "outils") return m.supports_tools === true;
         if (filter === "vision") return (m.modality || "").indexOf("image") !== -1;
         if (filter === "gratuits") return m.prompt_price_per_m === 0;
         return true;
@@ -246,10 +267,7 @@
       var utilisables = this.models.filter(function (m) {
         return m.available !== false;
       }).length;
-      recherche.placeholder =
-        utilisables < this.models.length
-          ? "Rechercher parmi " + utilisables + " modèles utilisables (" + this.models.length + " routés)…"
-          : "Rechercher parmi " + this.models.length + " modèles routés…";
+      recherche.placeholder = "Rechercher parmi " + utilisables + " modèles utilisables…";
       recherche.value = this.query;
       recherche.addEventListener("input", function () {
         self.query = recherche.value;
@@ -267,13 +285,26 @@
       root.appendChild(barre);
 
       var filtres = el("div", "locaryn-cloud-toolbar");
+      var presents = {};
+      this.models.forEach(function (m) {
+        if (GENRES[genre(m)]) presents[genre(m)] = true;
+      });
       [
-        ["utilisables", "Utilisables"],
-        ["tous", "Tous"],
+        ["chat", "Conversation"],
         ["outils", "Appel d'outils"],
         ["vision", "Vision"],
         ["gratuits", "Gratuits"],
-      ].forEach(function (paire) {
+      ]
+        .concat(
+          Object.keys(GENRES)
+            .filter(function (g) {
+              return presents[g];
+            })
+            .map(function (g) {
+              return [g, GENRES[g]];
+            }),
+        )
+        .forEach(function (paire) {
         var chip = el(
           "button",
           "locaryn-chip" + (self.filter === paire[0] ? " locaryn-chip-on" : ""),
@@ -348,10 +379,17 @@
           ),
         );
         if (m.supports_tools) faits.appendChild(el("span", null, "outils"));
-        if (m.available === false) faits.appendChild(el("span", null, "refusé par ce compte"));
         if ((m.modality || "").indexOf("image") !== -1) faits.appendChild(el("span", null, "vision"));
         gauche.appendChild(faits);
         carte.appendChild(gauche);
+
+        // Un modèle spécialisé sert l'extension qui l'a fait apparaître, pas
+        // la conversation : il n'a pas de bouton « Utiliser ».
+        if (genre(m) !== "chat") {
+          carte.appendChild(el("span", "locaryn-tag", GENRES[genre(m)] || genre(m)));
+          self.liste.appendChild(carte);
+          return;
+        }
 
         var choisir = el(
           "button",
