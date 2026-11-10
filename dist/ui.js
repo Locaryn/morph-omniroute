@@ -92,7 +92,10 @@
       // qui répond déjà. Une sonde toutes les quatre secondes, pas plus.
       var self = this;
       this.timer = window.setInterval(function () {
-        if (!self.running && !self.busy) self.load(false);
+        // En silence : l'écran ne se redessine que si quelque chose a changé.
+        // Redessiné toutes les quatre secondes, il clignotait pendant toute
+        // l'installation et le préchauffage de la passerelle.
+        if (!self.running && !self.busy) self.load(false, true);
       }, 4000);
     }
 
@@ -102,15 +105,27 @@
     }
 
     /** L'état de la passerelle, puis son catalogue. */
-    async load(refresh) {
+    /** Ce que l'écran montre, résumé : sert à savoir s'il faut redessiner. */
+    empreinte() {
+      return JSON.stringify([
+        this.running,
+        this.error,
+        this.models.length,
+        this.provider && this.provider.active_model,
+        this.provider && this.provider.has_key,
+      ]);
+    }
+
+    async load(refresh, silencieux) {
       var api = bridge();
       if (!api || !api.providers) {
         this.error = "Cette version de Locaryn ne sait pas encore servir une passerelle.";
         this.render();
         return;
       }
+      var avant = this.empreinte();
       this.busy = true;
-      this.render();
+      if (!silencieux) this.render();
       try {
         var list = await api.providers.list();
         this.provider =
@@ -127,7 +142,7 @@
         this.error = String((e && e.message) || e);
       } finally {
         this.busy = false;
-        this.render();
+        if (!silencieux || this.empreinte() !== avant) this.render();
       }
     }
 
