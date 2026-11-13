@@ -79,6 +79,41 @@
     return pct >= 90 ? "danger" : pct >= 70 ? "warn" : "ok";
   }
 
+  /** La teinte d'une fenêtre, la même sur la tuile et dans le dossier : une
+   *  limite refusée par le fournisseur l'emporte sur le pourcentage. La tuile
+   *  disait « limite atteinte » en rouge pendant que la jauge du dossier, qui
+   *  ne lisait que le pourcentage, restait au vert. */
+  function teinte(w) {
+    return w.status === "rejected" ? "danger" : niveau(aPct(w) ? w.used_percent : 0);
+  }
+
+  var GRAVITE = { danger: 0, warn: 1, ok: 2 };
+
+  /** Les plus tendues d'abord : ce sont elles que la tuile doit montrer. */
+  function parGravite(fenetres) {
+    return fenetres.slice().sort(function (a, b) {
+      return GRAVITE[teinte(a)] - GRAVITE[teinte(b)];
+    });
+  }
+
+  /** Une forme grise de taille fixe, à la place d'un quota pas encore lu : la
+   *  liste ne saute plus quand il arrive. */
+  function squelette(largeur, hauteur, rayon) {
+    var n = el("span", { "aria-hidden": "true" }, {
+      display: "inline-block",
+      width: largeur,
+      height: hauteur,
+      borderRadius: rayon || "999px",
+      background: "var(--border)",
+      opacity: "0.6",
+    });
+    var reduit = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (n.animate && !reduit) {
+      n.animate([{ opacity: 0.35 }, { opacity: 0.75 }, { opacity: 0.35 }], { duration: 1400, iterations: Infinity });
+    }
+    return n;
+  }
+
   /** « dans 2 h 13 », « dans 4 j » : quand la fenêtre repart de zéro. */
   function avant(iso) {
     if (!iso) return null;
@@ -136,15 +171,18 @@
   /** Une ligne de détail : libellé, pourcentage ou état, barre, reprise. */
   function ligneDetail(w, restant) {
     var pct = w.used_percent;
-    var valeur = aPct(w)
-      ? restant
-        ? Math.max(0, 100 - Math.round(pct)) + " % restants"
-        : Math.round(pct) + " %"
-      : etatSansPourcentage(w);
+    var refusee = w.status === "rejected";
+    var valeur = refusee
+      ? "Limite atteinte"
+      : aPct(w)
+        ? restant
+          ? Math.max(0, 100 - Math.round(pct)) + " % restants"
+          : Math.round(pct) + " %"
+        : etatSansPourcentage(w);
     var barre = null;
-    if (aPct(w)) {
-      var plein = el("span", {}, { width: Math.min(100, pct) + "%" });
-      barre = el("div", { class: "locaryn-usage-bar is-" + niveau(pct) }, null, [plein]);
+    if (aPct(w) || refusee) {
+      var plein = el("span", {}, { width: (refusee ? 100 : Math.min(100, pct)) + "%" });
+      barre = el("div", { class: "locaryn-usage-bar is-" + teinte(w) }, null, [plein]);
     }
     var reprise = avant(w.resets_at);
     return el("div", { class: "locaryn-usage-row" }, null, [
@@ -303,10 +341,24 @@
   }
 
   // ── Le résumé sur la tuile du dossier ────────────────────────────────────
+  /** Au-delà, la tuile résume par « +N… » : une passerelle a un compte par
+   *  fournisseur, et dix pastilles poussaient la liste des modèles. */
+  var TUILE_MAX = 3;
+  var UNE_LIGNE = { display: "flex", flexWrap: "nowrap", overflow: "hidden", minHeight: "22px", minWidth: "0" };
+  var PASTILLE_SOUPLE = { flex: "0 1 auto", minWidth: "0", overflow: "hidden", textOverflow: "ellipsis" };
+
   class Resume extends AvecContexte {
     contexteChange() {
       if (this._minuterie) return;
       var self = this;
+      if (!this._lu) {
+        this.replaceChildren(
+          el("div", { class: "locaryn-provider-usage-resume", "aria-busy": "true" }, UNE_LIGNE, [
+            squelette("84px", "20px"),
+            squelette("64px", "20px"),
+          ]),
+        );
+      }
       this.suivre(function () {
         lireUsage().then(function (u) {
           self.rendre(u);
@@ -315,18 +367,37 @@
     }
 
     rendre(u) {
-      var fenetres = connues(u);
+      this._lu = true;
+      var fenetres = parGravite(connues(u));
       if (fenetres.length === 0 && !(u && u.credits)) {
         this.replaceChildren();
         return;
       }
-      var ligne = el("div", { class: "locaryn-provider-usage-resume" });
-      fenetres.forEach(function (w) {
+      // Une seule ligne, toujours : la tuile garde la hauteur du squelette.
+      var ligne = el("div", { class: "locaryn-provider-usage-resume" }, UNE_LIGNE);
+      var texte = function (w) {
         var court = estHebdo(w) ? "Semaine" : String(w.label).replace(/^5 heures$/, "5 h");
-        var valeur = aPct(w) ? "reste " + Math.max(0, 100 - Math.round(w.used_percent)) + " %" : etatSansPourcentage(w);
-        var teinte = w.status === "rejected" ? "danger" : niveau(w.used_percent || 0);
-        ligne.append(el("span", { class: "locaryn-provider-usage-chip is-" + teinte }, null, [court + " " + valeur]));
+        var valeur =
+          w.status === "rejected"
+            ? "limite atteinte"
+            : aPct(w)
+              ? "reste " + Math.max(0, 100 - Math.round(w.used_percent)) + " %"
+              : etatSansPourcentage(w).toLowerCase();
+        return court + " " + valeur;
+      };
+      fenetres.slice(0, TUILE_MAX).forEach(function (w) {
+        ligne.append(
+          el("span", { class: "locaryn-provider-usage-chip is-" + teinte(w), title: texte(w) }, PASTILLE_SOUPLE, [texte(w)]),
+        );
       });
+      var reste = fenetres.slice(TUILE_MAX);
+      if (reste.length) {
+        ligne.append(
+          el("span", { class: "locaryn-provider-usage-chip", title: reste.map(texte).join("\n") }, { flex: "0 0 auto" }, [
+            "+" + reste.length + "…",
+          ]),
+        );
+      }
       if (u.credits) {
         ligne.append(
           el("span", { class: "locaryn-provider-usage-chip is-ok" }, null, [
@@ -346,7 +417,20 @@
       if (this._minuterie) return;
       var self = this;
       var a = api();
-      this.carteQuota = el("div");
+      // La forme de la grille finale (deux colonnes de fenêtres) : le
+      // dossier ne saute presque plus quand le quota arrive.
+      var cases = [];
+      for (var i = 0; i < 4; i++) {
+        cases.push(
+          el("div", {}, { display: "grid", gap: "8px" }, [squelette("60%", "12px", "4px"), squelette("100%", "6px", "4px")]),
+        );
+      }
+      this.carteQuota = el("div", { "aria-busy": "true" }, null, [
+        el("section", { class: "locaryn-provider-usage" }, null, [
+          squelette("140px", "14px", "4px"),
+          el("div", { class: "locaryn-provider-usage-grille" }, { marginTop: "12px" }, cases),
+        ]),
+      ]);
       this.carteTaches = el("div");
       this.replaceChildren(this.carteQuota, this.carteTaches);
       this.suivre(function () {
@@ -376,7 +460,8 @@
     }
 
     rendreQuota(u) {
-      var fenetres = connues(u);
+      this.carteQuota.removeAttribute("aria-busy");
+      var fenetres = parGravite(connues(u));
       if (!u || (fenetres.length === 0 && !u.credits)) {
         this.carteQuota.replaceChildren();
         return;
